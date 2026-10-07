@@ -1,0 +1,62 @@
+services:
+  # PostgreSQL 数据库
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: sure
+      POSTGRES_PASSWORD: sure_password_change_me
+      POSTGRES_DB: sure_blog
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sure -d sure_blog"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Next.js 应用
+  app:
+    build: .
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      # 数据库连接（指向上面的 db 容器）
+      DATABASE_URL: postgresql://sure:sure_password_change_me@db:5432/sure_blog?schema=public
+
+      # 以下变量请替换为你自己的值
+      SECRET_KEY: ${SECRET_KEY:-change-me-to-a-random-secret-key-at-least-32-characters}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      ADMIN_GITHUB_USERS: ${ADMIN_GITHUB_USERS:-}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME:-}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL:-}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      SITE_TITLE: ${SITE_TITLE:-My Blog}
+      SITE_URL: ${SITE_URL:-http://localhost:3000}
+      SITE_AUTHOR: ${SITE_AUTHOR:-Author}
+      SITE_BIO: ${SITE_BIO:-This is my personal blog.}
+      SITE_EMAIL: ${SITE_EMAIL:-}
+      SOCIAL_GITHUB: ${SOCIAL_GITHUB:-}
+      SOCIAL_BILIBILI: ${SOCIAL_BILIBILI:-}
+      SOCIAL_X: ${SOCIAL_X:-}
+      SOCIAL_YOUTUBE: ${SOCIAL_YOUTUBE:-}
+      CLOUD_MUSIC_PLAYLIST_ID: ${CLOUD_MUSIC_PLAYLIST_ID:-}
+      ICP_NAME: ${ICP_NAME:-}
+      ICP_LINK: ${ICP_LINK:-https://beian.miit.gov.cn/}
+      MOE_ICP_NAME: ${MOE_ICP_NAME:-}
+      MOE_ICP_LINK: ${MOE_ICP_LINK:-https://icp.gov.moe/}
+
+volumes:
+  pgdata:

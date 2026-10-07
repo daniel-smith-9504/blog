@@ -1,0 +1,70 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# blog posts (content is managed separately)
+/content/posts/
+
+# admin build output (rebuilt on deploy)
+/public/admin
+
+# Cloudflare Wrangler local state (sqlite, wasm, etc.)
+/.wrangler
+
+# local debug / one-off scripts (kept on disk but not in repo)
+analyze-*.cjs
+check-*.cjs
+fix-*.cjs
+
+# local uploads to public (real production uses R2 via app/lib/r2.ts)
+/public/uploads
+
+# local placeholder images used during early development
+# /public/images
+
+# OS / editor temp
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/

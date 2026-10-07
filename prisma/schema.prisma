@@ -1,0 +1,429 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int      @id @default(autoincrement())
+  username        String   @unique
+  hashed_password String
+  nickname        String   @default("")
+  avatar          String   @default("")
+  email           String   @default("")
+  bio             String   @default("")
+  is_admin        Boolean  @default(false)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @default(now()) @updatedAt
+
+  @@map("user")
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  slug        String   @unique
+  description String   @default("")
+  sort        Int      @default(0)
+  post_count  Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+
+  posts Post[]
+}
+
+model Tag {
+  id         Int    @id @default(autoincrement())
+  name       String @unique
+  slug       String @unique
+  post_count Int    @default(0)
+
+  posts PostTag[]
+}
+
+model Post {
+  id            Int       @id @default(autoincrement())
+  title         String
+  slug          String    @unique
+  description   String    @default("")
+  content       String    @default("")
+  cover         String    @default("")
+  category_id   Int?
+  status        String    @default("draft")
+  is_pinned     Boolean   @default(false)
+  views         Int       @default(0)
+  likes         Int       @default(0)
+  word_count    Int       @default(0)
+  reading_time  Int       @default(0)
+  published_at  DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @default(now()) @updatedAt
+
+  category Category? @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  tags     PostTag[]
+  comments Comment[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([category_id])
+}
+
+model PostTag {
+  post_id Int
+  tag_id  Int
+
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([post_id, tag_id])
+}
+
+model GitHubUser {
+  id         Int      @id @default(autoincrement())
+  github_id  Int      @unique
+  login      String
+  avatar     String   @default("")
+  bio        String   @default("")
+  created_at DateTime @default(now())
+
+  comments        Comment[]
+  messages        Message[]
+  chatterComments ChatterComment[]
+}
+
+model Comment {
+  id                Int      @id @default(autoincrement())
+  post_id           Int
+  parent_id         Int?
+  github_user_id    Int?
+  email_user_name   String   @default("")
+  email_user_avatar String   @default("")
+  content           String
+  likes             Int      @default(0)
+  ip                String   @default("")
+  status            String   @default("approved")
+  created_at        DateTime @default(now())
+
+  post       Post        @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  parent     Comment?    @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
+  replies    Comment[]   @relation("CommentReplies")
+  githubUser GitHubUser? @relation(fields: [github_user_id], references: [id], onDelete: SetNull)
+
+  @@index([post_id])
+  @@index([status])
+  @@index([github_user_id])
+}
+
+model Message {
+  id                Int      @id @default(autoincrement())
+  github_user_id    Int?
+  parent_id         Int?
+  content           String
+  ip                String   @default("")
+  status            String   @default("approved")
+  likes             Int      @default(0)
+  email_user_name   String   @default("")
+  email_user_avatar String   @default("")
+  created_at        DateTime @default(now())
+
+  parent     Message?    @relation("MessageReplies", fields: [parent_id], references: [id], onDelete: Cascade)
+  replies    Message[]   @relation("MessageReplies")
+  githubUser GitHubUser? @relation(fields: [github_user_id], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([parent_id])
+  @@index([github_user_id])
+}
+
+model Chatter {
+  id              Int      @id @default(autoincrement())
+  content         String
+  images          String   @default("[]")
+  mood            String   @default("")
+  likes           Int      @default(0)
+  comments_count  Int      @default(0)
+  status          String   @default("draft")
+  created_at      DateTime @default(now())
+  updated_at      DateTime @default(now()) @updatedAt
+
+  comments ChatterComment[]
+
+  @@index([status])
+}
+
+model ChatterComment {
+  id                Int      @id @default(autoincrement())
+  chatter_id        Int
+  parent_id         Int?
+  github_user_id    Int?
+  email_user_name   String   @default("")
+  email_user_avatar String   @default("")
+  content           String
+  ip                String   @default("")
+  likes             Int      @default(0)
+  status            String   @default("approved")
+  created_at        DateTime @default(now())
+
+  chatter    Chatter     @relation(fields: [chatter_id], references: [id], onDelete: Cascade)
+  parent     ChatterComment? @relation("ChatterCommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
+  replies    ChatterComment[] @relation("ChatterCommentReplies")
+  githubUser GitHubUser? @relation(fields: [github_user_id], references: [id], onDelete: SetNull)
+
+  @@index([chatter_id])
+  @@index([status])
+  @@index([github_user_id])
+}
+
+model Album {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String   @default("")
+  cover       String   @default("")
+  photo_count Int      @default(0)
+  sort        Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+
+  photos Photo[]
+}
+
+model Photo {
+  id          Int      @id @default(autoincrement())
+  album_id    Int
+  url         String
+  caption     String   @default("")
+  orientation String   @default("landscape")
+  sort        Int      @default(0)
+  created_at  DateTime @default(now())
+
+  album Album @relation(fields: [album_id], references: [id], onDelete: Cascade)
+
+  @@index([album_id])
+}
+
+model Project {
+  id               Int      @id @default(autoincrement())
+  name             String
+  slug             String   @unique
+  description      String   @default("")
+  long_description String   @default("")
+  cover_image      String   @default("")
+  tech_stack       String   @default("[]")
+  link_github      String   @default("")
+  link_gitee       String   @default("")
+  link_live        String   @default("")
+  link_docs        String   @default("")
+  status           String   @default("developing")
+  status_label     String   @default("")
+  is_featured      Boolean  @default(false)
+  sort             Int      @default(0)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @default(now()) @updatedAt
+}
+
+model FriendLink {
+  id          Int      @id @default(autoincrement())
+  name        String
+  url         String
+  avatar      String   @default("")
+  description String   @default("")
+  sort        Int      @default(0)
+  is_approved Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+}
+
+model BookmarkCategory {
+  id          Int      @id @default(autoincrement())
+  name        String
+  icon        String   @default("")
+  description String   @default("")
+  sort        Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+
+  sites BookmarkSite[]
+}
+
+model BookmarkSite {
+  id          Int      @id @default(autoincrement())
+  category_id Int
+  name        String
+  url         String
+  icon        String   @default("")
+  description String   @default("")
+  platforms   String   @default("[]")
+  sort        Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+
+  category BookmarkCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  @@index([category_id])
+}
+
+model Music {
+  id       Int      @id @default(autoincrement())
+  title    String
+  artist   String   @default("")
+  cover    String   @default("")
+  src      String   // MP3 文件路径
+  lrc      String   @default("")  // 歌词文本（LRC 格式）
+  lrcSrc   String   @default("")  // 歌词文件路径（备用）
+  type     String   @default("local") // local | netease
+  sort     Int      @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@index([type])
+  @@index([sort])
+}
+
+model SiteConfig {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String   @default("")
+  description String   @default("")
+  updated_at  DateTime @default(now()) @updatedAt
+}
+
+model Visitor {
+  id          Int      @id @default(autoincrement())
+  ip          String
+  path        String   @default("")
+  user_agent  String   @default("")
+  city        String   @default("")
+  region      String   @default("")
+  country     String   @default("")
+  district    String   @default("")
+  org         String   @default("")
+  asn         String   @default("")
+  is_mobile   Boolean  @default(false)
+  is_proxy    Boolean  @default(false)
+  is_hosting  Boolean  @default(false)
+  browser     String   @default("")
+  os          String   @default("")
+  device_type String   @default("")
+  created_at  DateTime @default(now())
+
+  @@index([ip])
+  @@index([created_at])
+}
+
+model LoginLog {
+  id             Int      @id @default(autoincrement())
+  user_id        Int      @default(0)
+  username       String   @default("")
+  ip             String   @default("")
+  address        String   @default("")
+  system         String   @default("")
+  browser        String   @default("")
+  summary        String   @default("")
+  operatingTime  DateTime @default(now()) @map("operating_time")
+
+  @@index([user_id])
+  @@index([operatingTime])
+  @@map("login_log")
+}
+
+model BookCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  slug        String   @unique
+  description String   @default("")
+  sort        Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+
+  books Book[]
+
+  @@map("book_category")
+}
+
+model Book {
+  id          Int      @id @default(autoincrement())
+  title       String
+  author      String   @default("")
+  cover       String   @default("")
+  description String   @default("")
+  file_url    String
+  format      String   @default("epub")
+  file_size   Int      @default(0)
+  category_id Int?
+  sort        Int      @default(0)
+  views       Int      @default(0)
+  chapter_count Int    @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+
+  category BookCategory? @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  chapters BookChapter[]
+  progress ReadingProgress?
+  notes    BookNote[]
+
+  @@map("book")
+  @@index([category_id])
+  @@index([format])
+}
+
+model BookChapter {
+  id        Int      @id @default(autoincrement())
+  book_id   Int
+  title     String
+  href      String
+  order     Int      @default(0)
+  created_at DateTime @default(now())
+
+  book Book @relation(fields: [book_id], references: [id], onDelete: Cascade)
+
+  @@index([book_id])
+  @@index([order])
+  @@map("book_chapter")
+}
+
+model ReadingProgress {
+  id            Int      @id @default(autoincrement())
+  book_id       Int      @unique
+  chapter_id    Int?
+  chapter_title String   @default("")
+  position      Float    @default(0)
+  updated_at    DateTime @updatedAt
+
+  book Book @relation(fields: [book_id], references: [id], onDelete: Cascade)
+
+  @@map("reading_progress")
+}
+
+model BookNote {
+  id             Int      @id @default(autoincrement())
+  book_id        Int
+  chapter_id     Int?
+  text           String
+  note           String   @default("")
+  color          String   @default("#facc15")
+  cfi            String   @default("")
+  chapter_title  String   @default("")
+  created_at     DateTime @default(now())
+
+  book Book @relation(fields: [book_id], references: [id], onDelete: Cascade)
+
+  @@index([book_id])
+  @@map("book_note")
+}
+
+model EmailVerification {
+  id         Int      @id @default(autoincrement())
+  email      String
+  code       String
+  verified   Boolean  @default(false)
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  @@index([email])
+  @@index([code])
+  @@map("email_verification")
+}
